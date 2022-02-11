@@ -31,7 +31,7 @@ var searchCmd = &cobra.Command{
 	Short: "Search command accepts a search string to query Github API",
 	Run: func(cmd *cobra.Command, args []string) {
 		// setup logger
-		f, err := os.OpenFile("request.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		f, err := os.OpenFile("/logs/request.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			fmt.Printf("error opening file: %v", err)
 		}

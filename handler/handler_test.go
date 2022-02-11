@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
@@ -169,7 +171,8 @@ func TestGetAvailableReleases(t *testing.T) {
 			_, _ = w.Write([]byte(tc.body))
 		}))
 		defer testServer.Close()
-		handler := NewHandler(testServer.URL)
+    l := log.New(os.Stdout,"",log.LUTC)
+		handler := NewHandler(testServer.URL, l)
 		t.Run(tc.name, func(t *testing.T) {
 			repos, _ := handler.GetRepositories("Go", "asc", tc.ignore, 1)
 			if tc.ignore != "" {
