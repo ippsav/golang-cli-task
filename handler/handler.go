@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -11,12 +12,14 @@ import (
 type Handler struct {
 	client *http.Client
   githubAPI string
+  logger *log.Logger
 }
 
-func NewHandler(url string) *Handler {
+func NewHandler(url string, logger *log.Logger) *Handler {
 	return &Handler{
 		client: &http.Client{},
     githubAPI: url,
+    logger: logger,
 	}
 }
 
@@ -56,6 +59,12 @@ type SearchResponse struct {
 	Items             []Repository `json:"items"`
 }
 
+type HTTPReqInfo struct {
+	method string
+	uri string
+	code int
+}
+
 func (h *Handler) GetRepositories(search, sort, ignore string, page int) ([]Repository, error) {
 	query := fmt.Sprintf("q=%s+in:name&page=%d&sort=name&order=%s", search, page, sort)
 	// request setup
@@ -67,6 +76,12 @@ func (h *Handler) GetRepositories(search, sort, ignore string, page int) ([]Repo
 	// headers setup
 	req.Header.Add("accept", "application/vnd.github.v3+json")
 	resp, err := h.client.Do(req)
+  reqInfo := &HTTPReqInfo{
+  	method:   req.Method,
+  	uri:      req.URL.String(),
+  	code:     resp.StatusCode,
+  }
+  h.log(*reqInfo)
 	if err != nil {
 		return nil, fmt.Errorf("unable to do request, err: %s", err.Error())
 	}
@@ -83,6 +98,10 @@ func (h *Handler) GetRepositories(search, sort, ignore string, page int) ([]Repo
     return filterRepositories(ignore, searchResponse.Items), nil
 	}
 	return searchResponse.Items, nil
+}
+
+func (h *Handler) log(info HTTPReqInfo){
+  h.logger.Printf("sent at:%s\nmethod:%s\nuri:%s\nstatus code:%d\n",time.Now().String(),info.method,info.uri,info.code)
 }
 
 func filterRepositories(subString string, repos []Repository)[]Repository {
