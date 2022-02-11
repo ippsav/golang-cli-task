@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -55,11 +56,8 @@ type SearchResponse struct {
 	Items             []Repository `json:"items"`
 }
 
-func (h *Handler) GetRepositories(search, sort, ignore string) ([]Repository, error) {
-	query := fmt.Sprintf("q=%s", search)
-	if sort != "" {
-		query += fmt.Sprintf("&sort=name&order=%s", sort)
-	}
+func (h *Handler) GetRepositories(search, sort, ignore string, page int) ([]Repository, error) {
+	query := fmt.Sprintf("q=%s+in:name&page=%d&sort=name&order=%s", search, page, sort)
 	// request setup
 	url := fmt.Sprintf("%s/search/repositories?%s", githubAPI, query)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -73,13 +71,22 @@ func (h *Handler) GetRepositories(search, sort, ignore string) ([]Repository, er
 		return nil, fmt.Errorf("unable to do request, err: %s", err.Error())
 	}
 	searchResponse := &SearchResponse{}
-  if resp.StatusCode != http.StatusOK {
-    return nil, fmt.Errorf("error getting data, status code:%d", resp.StatusCode)
-  }
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error getting data, status code:%d", resp.StatusCode)
+	}
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&searchResponse)
 	if err != nil {
 		return nil, fmt.Errorf("error decoding body, err: %s", err.Error())
+	}
+	if ignore != "" {
+		items := make([]Repository, 0)
+    for _, repo := range searchResponse.Items {
+      if !strings.Contains(repo.Name, ignore){
+        items = append(items, repo)
+      }
+    }
+    return items, nil
 	}
 	return searchResponse.Items, nil
 }
