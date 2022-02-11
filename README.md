@@ -39,6 +39,6 @@ Run the following command:
 The application logs sent request in a directory inside the image, the image shares a volume on where you can get the log file.
 To run the app run the following command:
 
-    	docker run --volume=$HOME/logs:/logs -i cli help
+    docker run --volume=$HOME/logs:/logs -i cli help
 
 This will run the CLI app and show help menu.
