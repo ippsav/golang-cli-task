@@ -10,16 +10,16 @@ import (
 
 type Handler struct {
 	client *http.Client
+  githubAPI string
 }
 
-func NewHandler() *Handler {
+func NewHandler(url string) *Handler {
 	return &Handler{
 		client: &http.Client{},
+    githubAPI: url,
 	}
 }
 
-// Github API
-const githubAPI = "https://api.github.com"
 
 type Owner struct {
 	Login             string `json:"login"`
@@ -59,7 +59,7 @@ type SearchResponse struct {
 func (h *Handler) GetRepositories(search, sort, ignore string, page int) ([]Repository, error) {
 	query := fmt.Sprintf("q=%s+in:name&page=%d&sort=name&order=%s", search, page, sort)
 	// request setup
-	url := fmt.Sprintf("%s/search/repositories?%s", githubAPI, query)
+	url := fmt.Sprintf("%s/search/repositories?%s", h.githubAPI, query)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not create request, err: %s", err.Error())
@@ -80,13 +80,17 @@ func (h *Handler) GetRepositories(search, sort, ignore string, page int) ([]Repo
 		return nil, fmt.Errorf("error decoding body, err: %s", err.Error())
 	}
 	if ignore != "" {
+    return filterRepositories(ignore, searchResponse.Items), nil
+	}
+	return searchResponse.Items, nil
+}
+
+func filterRepositories(subString string, repos []Repository)[]Repository {
 		items := make([]Repository, 0)
-    for _, repo := range searchResponse.Items {
-      if !strings.Contains(repo.Name, ignore){
+    for _, repo := range repos {
+      if !strings.Contains(repo.Name, subString){
         items = append(items, repo)
       }
     }
-    return items, nil
-	}
-	return searchResponse.Items, nil
+    return items 
 }
