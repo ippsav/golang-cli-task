@@ -2,6 +2,10 @@
 
 The app is a command line app written in go using Cobra package.The app searches available Github repositories based on a given string.
 
+## Building from source
+
+    - go build -o app main.go
+
 ## Search Command
 
 The search command accepts a search string to query Github API.
